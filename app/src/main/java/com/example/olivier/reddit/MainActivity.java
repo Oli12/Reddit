@@ -40,16 +40,19 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     DrawerLayout drawer;
     ListView drawerList;
-    final String[] sections = {"popular", "news", "politic", "economy", "science", "autotldr"};
-    final int[] icons = {R.drawable.popular_icon, R.drawable.news_icon, R.drawable.politics_icon,
+    final String[] sections = {"news", "politics", "economy", "science", "autotldr"};
+    final int[] icons = {R.drawable.news_icon, R.drawable.politics_icon,
             R.drawable.economy_icon, R.drawable.science_icon, R.drawable.popular_icon};
+
     ListView list;
 
     ListAdapter mainItemListAdapter;
     ListAdapter leftDrawerListAdapter;
     RootData data;
     List<Child> children = new ArrayList<>();
-    String sectionsel;
+
+    NewPageControl pageControl;
+
     int pageCount = 0;
 
     RedditApi reddit;
@@ -64,13 +67,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
         list = (ListView)findViewById(R.id.listView);
 
+        pageControl = new NewPageControl(list);
 
-        Intent intent = getIntent();
-        sectionsel = intent.getStringExtra("SECTION");
-        if(sectionsel == null)
-            sectionsel = "popular";
+        list.setOnScrollListener(pageControl);
 
-        reddit = new RedditApi(sectionsel);
+        reddit = new RedditApi(sections[0]);
 
         RunApi run = new RunApi(reddit);
         run.execute();
@@ -81,7 +82,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 R.id.drawer_list_item_text, R.id.drawer_list_item_image, sections, icons);
         drawerList.setAdapter(leftDrawerListAdapter);
         drawerList.setOnItemClickListener(this);
-
 
     }
 
@@ -115,17 +115,16 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 detailsIntent.putExtra("SELF_TEXT", selfText);
                 startActivity(detailsIntent);
                 break;
+
             case R.id.drawer_list_item:
                 Log.i(sections[position], "drawable");
-                Intent newMainActivity = new Intent(this, MainActivity.class);
-                newMainActivity.putExtra("SECTION", sections[position]);
-                startActivity(newMainActivity);
+                children.clear();
+                RunApi newApi = new RunApi(new RedditApi(sections[position]));
+                newApi.execute();
                 break;
         }
 
     }
-
-
 
 
 
@@ -146,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             //reddit = new RedditApi(category);
             try {
 
+                pageControl.setLoadFlag();
                 data = reddit.run();
                 children.addAll(data.children);
                 titleList = new String[children.size()];
@@ -158,8 +158,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             } catch (IOException e) {
 
                 Intent intent = new Intent(getApplicationContext(), ConnexionErrorActivity.class);
-
-                intent.putExtra("SECTION", sectionsel);
                 Log.i(getApplicationContext().toString(), " conex erreur");
                 startActivity(intent);
 
@@ -179,6 +177,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
             list.setAdapter(mainItemListAdapter);
             list.setOnItemClickListener(MainActivity.this);
+            pageControl.raiseLoadFlag();
             Log.i("" + list.getLastVisiblePosition(), "visible");
 
 

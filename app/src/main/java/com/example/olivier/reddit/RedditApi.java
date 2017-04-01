@@ -50,9 +50,11 @@ public class RedditApi {
 
     }
 
-    public void nextPage(String after){
-        url += "?count=25&after=" + after;
-        Log.i(url, "urldddd");
+    public RedditApi nextPage(String after){
+        String newUrl = url + "?count=25&after=" + after;
+        Log.i(newUrl, "urldddd");
+        return new RedditApi(newUrl);
+
     }
 
 }
